@@ -1,0 +1,1 @@
+- [TanStack Query auth error handling](tanstack-query-auth.md) — always disable retry on 401/403 or the login redirect is blocked for seconds

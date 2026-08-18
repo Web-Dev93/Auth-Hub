@@ -12,7 +12,18 @@ import {
 } from 'wouter';
 import { routes } from './routes';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: unknown) => {
+        // Never retry on 401 or 403 — user is simply not authenticated
+        const status = (error as { status?: number })?.status;
+        if (status === 401 || status === 403) return false;
+        return failureCount < 2;
+      },
+    },
+  },
+});
 
 function Router() {
   return (
