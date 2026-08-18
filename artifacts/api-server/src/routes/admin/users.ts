@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, accountsTable, activityLogsTable, appsTable } from "@workspace/db";
-import { eq, ilike, and, desc, count, or } from "drizzle-orm";
+import { eq, ilike, and, desc, count, or, inArray } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { requireAdmin } from "../../lib/auth";
 import { UpdateUserBody, UpdateUserParams, GetUserParams, DeleteUserParams, ListUsersQueryParams } from "@workspace/api-zod";
@@ -52,7 +52,7 @@ router.get("/admin/users", requireAdmin, async (req, res): Promise<void> => {
       ? await db
           .select({ userId: accountsTable.userId, provider: accountsTable.provider })
           .from(accountsTable)
-          .where(sql`${accountsTable.userId} = ANY(${userIds}::uuid[])`)
+          .where(inArray(accountsTable.userId, userIds))
       : [];
 
   // Get app names for primary app
@@ -62,7 +62,7 @@ router.get("/admin/users", requireAdmin, async (req, res): Promise<void> => {
       ? await db
           .select({ id: appsTable.id, name: appsTable.name })
           .from(appsTable)
-          .where(sql`${appsTable.id} = ANY(${appIds}::uuid[])`)
+          .where(inArray(appsTable.id, appIds))
       : [];
   const appMap = new Map(apps.map((a) => [a.id, a.name]));
 

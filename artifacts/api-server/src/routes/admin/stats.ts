@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, accountsTable, activityLogsTable, appsTable } from "@workspace/db";
-import { desc, count, gte, eq, and, sql } from "drizzle-orm";
+import { desc, count, gte, eq, and, sql, inArray } from "drizzle-orm";
 import { requireAdmin } from "../../lib/auth";
 import { ListActivityQueryParams } from "@workspace/api-zod";
 
@@ -58,7 +58,7 @@ router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
       ? await db
           .select({ id: appsTable.id, name: appsTable.name })
           .from(appsTable)
-          .where(sql`${appsTable.id} = ANY(${appIds}::uuid[])`)
+          .where(inArray(appsTable.id, appIds))
       : [];
   const appMap = new Map(apps.map((a) => [a.id, a.name]));
 
@@ -113,13 +113,13 @@ router.get("/admin/activity", requireAdmin, async (req, res): Promise<void> => {
       ? db
           .select({ id: usersTable.id, email: usersTable.email, name: usersTable.name })
           .from(usersTable)
-          .where(sql`${usersTable.id} = ANY(${userIds}::uuid[])`)
+          .where(inArray(usersTable.id, userIds))
       : Promise.resolve([]),
     appIds.length > 0
       ? db
           .select({ id: appsTable.id, name: appsTable.name })
           .from(appsTable)
-          .where(sql`${appsTable.id} = ANY(${appIds}::uuid[])`)
+          .where(inArray(appsTable.id, appIds))
       : Promise.resolve([]),
   ]);
 

@@ -8,7 +8,8 @@ import {
   Activity, 
   LogOut, 
   ShieldCheck,
-  Menu
+  Menu,
+  UserCircle
 } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
@@ -48,6 +49,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const NavLinks = () => {
     const links = [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/profile", label: "Mój profil", icon: UserCircle },
       { href: "/users", label: "Users", icon: Users },
       { href: "/apps", label: "Apps", icon: Boxes },
       { href: "/activity", label: "Activity", icon: Activity },
