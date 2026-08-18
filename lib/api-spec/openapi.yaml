@@ -33,11 +33,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /auth/providers:
+    get:
+      operationId: listProviders
+      tags: [auth]
+      summary: List enabled OAuth providers
+      responses:
+        "200":
+          description: Enabled provider names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
   /auth/me:
     get:
       operationId: getMe
       tags: [auth]
-      summary: Get current authenticated user
+      summary: Get current authenticated user (full profile)
       responses:
         "200":
           description: Current user
@@ -45,6 +60,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Me"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me/activity:
+    get:
+      operationId: getMeActivity
+      tags: [auth]
+      summary: Get current user's own activity log
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: number
+            default: 50
+      responses:
+        "200":
+          description: Activity log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
         "401":
           description: Not authenticated
           content:
@@ -405,7 +447,7 @@ components:
 
     Me:
       type: object
-      required: [id, email, name, role, verificationLevel, createdAt]
+      required: [id, email, name, role, status, verificationLevel, createdAt]
       properties:
         id:
           type: string
@@ -417,12 +459,32 @@ components:
           type: ["string", "null"]
         role:
           type: string
+        status:
+          type: string
         verificationLevel:
           type: number
         connectedProviders:
           type: array
           items:
             type: string
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LinkedAccount"
+        geoCountry:
+          type: ["string", "null"]
+        geoCity:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        browser:
+          type: ["string", "null"]
+        os:
+          type: ["string", "null"]
+        deviceType:
+          type: ["string", "null"]
+        lastLoginAt:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -689,6 +751,24 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DayStat"
+        geoBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              country:
+                type: ["string", "null"]
+              count:
+                type: number
+        browserBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              browser:
+                type: ["string", "null"]
+              count:
+                type: number
 
     ProviderStat:
       type: object

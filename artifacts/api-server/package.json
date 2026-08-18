@@ -10,6 +10,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@types/passport-facebook": "^3.0.4",
+    "@types/passport-github2": "^1.2.9",
+    "@types/ua-parser-js": "^0.7.39",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "connect-pg-simple": "^10.0.0",
@@ -20,9 +23,14 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "passport": "^0.7.0",
+    "passport-discord": "^0.1.4",
+    "passport-facebook": "^3.0.0",
+    "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
+    "passport-microsoft": "^2.1.0",
     "pino": "^9.14.0",
-    "pino-http": "^10.5.0"
+    "pino-http": "^10.5.0",
+    "ua-parser-js": "^2.0.10"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",

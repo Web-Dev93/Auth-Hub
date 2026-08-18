@@ -17,6 +17,16 @@ export interface SuccessResponse {
   success: boolean;
 }
 
+export interface LinkedAccount {
+  id: string;
+  provider: string;
+  /** @nullable */
+  providerEmail?: string | null;
+  /** @nullable */
+  providerName?: string | null;
+  createdAt: string;
+}
+
 export interface Me {
   id: string;
   email: string;
@@ -24,8 +34,24 @@ export interface Me {
   /** @nullable */
   avatarUrl?: string | null;
   role: string;
+  status: string;
   verificationLevel: number;
   connectedProviders?: string[];
+  accounts?: LinkedAccount[];
+  /** @nullable */
+  geoCountry?: string | null;
+  /** @nullable */
+  geoCity?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  browser?: string | null;
+  /** @nullable */
+  os?: string | null;
+  /** @nullable */
+  deviceType?: string | null;
+  /** @nullable */
+  lastLoginAt?: string | null;
   createdAt: string;
 }
 
@@ -49,16 +75,6 @@ export interface User {
   geoCity?: string | null;
   /** @nullable */
   lastLoginAt?: string | null;
-  createdAt: string;
-}
-
-export interface LinkedAccount {
-  id: string;
-  provider: string;
-  /** @nullable */
-  providerEmail?: string | null;
-  /** @nullable */
-  providerName?: string | null;
   createdAt: string;
 }
 
@@ -202,6 +218,18 @@ export interface AppKey {
   clientSecret: string;
 }
 
+export type AdminStatsGeoBreakdownItem = {
+  /** @nullable */
+  country?: string | null;
+  count?: number;
+};
+
+export type AdminStatsBrowserBreakdownItem = {
+  /** @nullable */
+  browser?: string | null;
+  count?: number;
+};
+
 export interface ProviderStat {
   provider: string;
   count: number;
@@ -227,7 +255,13 @@ export interface AdminStats {
   providerBreakdown: ProviderStat[];
   appBreakdown: AppStat[];
   registrationsTrend: DayStat[];
+  geoBreakdown?: AdminStatsGeoBreakdownItem[];
+  browserBreakdown?: AdminStatsBrowserBreakdownItem[];
 }
+
+export type GetMeActivityParams = {
+limit?: number;
+};
 
 export type ListUsersParams = {
 page?: number;

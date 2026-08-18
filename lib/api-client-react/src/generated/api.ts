@@ -28,6 +28,7 @@ import type {
   AppUpdate,
   AppWithSecret,
   ErrorResponse,
+  GetMeActivityParams,
   HealthStatus,
   ListActivityParams,
   ListUsersParams,
@@ -143,6 +144,83 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+export const getListProvidersUrl = () => {
+
+
+
+
+  return `/api/auth/providers`
+}
+
+/**
+ * @summary List enabled OAuth providers
+ */
+export const listProviders = async ( options?: Parameters<typeof customFetch>[1]): Promise<string[]> => {
+
+  return customFetch<string[]>(getListProvidersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProvidersQueryKey = () => {
+    return [
+    `/api/auth/providers`
+    ] as const;
+    }
+
+
+export const getListProvidersQueryOptions = <TData = Awaited<ReturnType<typeof listProviders>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProvidersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProviders>>> = ({ signal }) => listProviders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProviders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProvidersQueryResult = NonNullable<Awaited<ReturnType<typeof listProviders>>>
+export type ListProvidersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List enabled OAuth providers
+ */
+
+export function useListProviders<TData = Awaited<ReturnType<typeof listProviders>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProvidersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetMeUrl = () => {
 
 
@@ -152,7 +230,7 @@ export const getGetMeUrl = () => {
 }
 
 /**
- * @summary Get current authenticated user
+ * @summary Get current authenticated user (full profile)
  */
 export const getMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<Me> => {
 
@@ -199,7 +277,7 @@ export type GetMeQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get current authenticated user
+ * @summary Get current authenticated user (full profile)
  */
 
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<ErrorResponse>>(
@@ -208,6 +286,90 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMeQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMeActivityUrl = (params?: GetMeActivityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/me/activity?${stringifiedParams}` : `/api/auth/me/activity`
+}
+
+/**
+ * @summary Get current user's own activity log
+ */
+export const getMeActivity = async (params?: GetMeActivityParams, options?: Parameters<typeof customFetch>[1]): Promise<ActivityLog[]> => {
+
+  return customFetch<ActivityLog[]>(getGetMeActivityUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMeActivityQueryKey = (params?: GetMeActivityParams,) => {
+    return [
+    `/api/auth/me/activity`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMeActivityQueryOptions = <TData = Awaited<ReturnType<typeof getMeActivity>>, TError = ErrorType<ErrorResponse>>(params?: GetMeActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMeActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMeActivityQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMeActivity>>> = ({ signal }) => getMeActivity(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMeActivity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMeActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getMeActivity>>>
+export type GetMeActivityQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get current user's own activity log
+ */
+
+export function useGetMeActivity<TData = Awaited<ReturnType<typeof getMeActivity>>, TError = ErrorType<ErrorResponse>>(
+ params?: GetMeActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMeActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMeActivityQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

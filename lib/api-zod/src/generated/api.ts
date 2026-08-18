@@ -17,7 +17,14 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * @summary Get current authenticated user
+ * @summary List enabled OAuth providers
+ */
+export const ListProvidersResponseItem = zod.string()
+export const ListProvidersResponse = zod.array(ListProvidersResponseItem)
+
+
+/**
+ * @summary Get current authenticated user (full profile)
  */
 export const GetMeResponse = zod.object({
   "id": zod.string(),
@@ -25,10 +32,52 @@ export const GetMeResponse = zod.object({
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
   "role": zod.string(),
+  "status": zod.string(),
   "verificationLevel": zod.number(),
   "connectedProviders": zod.array(zod.string()).optional(),
+  "accounts": zod.array(zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "providerEmail": zod.string().nullish(),
+  "providerName": zod.string().nullish(),
+  "createdAt": zod.string()
+})).optional(),
+  "geoCountry": zod.string().nullish(),
+  "geoCity": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "browser": zod.string().nullish(),
+  "os": zod.string().nullish(),
+  "deviceType": zod.string().nullish(),
+  "lastLoginAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
+
+
+/**
+ * @summary Get current user's own activity log
+ */
+export const getMeActivityQueryLimitDefault = 50;
+
+export const GetMeActivityQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getMeActivityQueryLimitDefault)
+})
+
+export const GetMeActivityResponseItem = zod.object({
+  "id": zod.string(),
+  "userId": zod.string().nullish(),
+  "userEmail": zod.string().nullish(),
+  "userName": zod.string().nullish(),
+  "appId": zod.string().nullish(),
+  "appName": zod.string().nullish(),
+  "eventType": zod.string(),
+  "provider": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "geoCountry": zod.string().nullish(),
+  "geoCity": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetMeActivityResponse = zod.array(GetMeActivityResponseItem)
 
 
 /**
@@ -60,7 +109,15 @@ export const GetStatsResponse = zod.object({
   "registrationsTrend": zod.array(zod.object({
   "date": zod.string(),
   "count": zod.number()
-}))
+})),
+  "geoBreakdown": zod.array(zod.object({
+  "country": zod.string().nullish(),
+  "count": zod.number().optional()
+})).optional(),
+  "browserBreakdown": zod.array(zod.object({
+  "browser": zod.string().nullish(),
+  "count": zod.number().optional()
+})).optional()
 })
 
 

@@ -8,6 +8,8 @@
 
 export * from './activityLog';
 export * from './adminStats';
+export * from './adminStatsBrowserBreakdownItem';
+export * from './adminStatsGeoBreakdownItem';
 export * from './app';
 export * from './appInput';
 export * from './appInputRequestedScopes';
@@ -20,6 +22,7 @@ export * from './appWithSecret';
 export * from './appWithSecretRequestedScopes';
 export * from './dayStat';
 export * from './errorResponse';
+export * from './getMeActivityParams';
 export * from './healthStatus';
 export * from './linkedAccount';
 export * from './listActivityParams';

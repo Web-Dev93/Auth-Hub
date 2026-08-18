@@ -5,6 +5,7 @@
  * AuthHub API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { LinkedAccount } from './linkedAccount';
 
 export interface Me {
   id: string;
@@ -13,7 +14,23 @@ export interface Me {
   /** @nullable */
   avatarUrl?: string | null;
   role: string;
+  status: string;
   verificationLevel: number;
   connectedProviders?: string[];
+  accounts?: LinkedAccount[];
+  /** @nullable */
+  geoCountry?: string | null;
+  /** @nullable */
+  geoCity?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  browser?: string | null;
+  /** @nullable */
+  os?: string | null;
+  /** @nullable */
+  deviceType?: string | null;
+  /** @nullable */
+  lastLoginAt?: string | null;
   createdAt: string;
 }

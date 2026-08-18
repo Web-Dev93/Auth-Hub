@@ -22,6 +22,8 @@ router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
     providerRows,
     appRows,
     trendRows,
+    geoRows,
+    browserRows,
   ] = await Promise.all([
     db.select({ totalUsers: count() }).from(usersTable),
     db.select({ newUsersToday: count() }).from(usersTable).where(gte(usersTable.createdAt, todayStart)),
@@ -49,6 +51,20 @@ router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
       .where(gte(usersTable.createdAt, twoWeeksAgo))
       .groupBy(sql`DATE(${usersTable.createdAt})`)
       .orderBy(sql`DATE(${usersTable.createdAt})`),
+    db
+      .select({ country: usersTable.geoCountry, cnt: count() })
+      .from(usersTable)
+      .where(sql`${usersTable.geoCountry} IS NOT NULL`)
+      .groupBy(usersTable.geoCountry)
+      .orderBy(desc(count()))
+      .limit(10),
+    db
+      .select({ browser: usersTable.browser, cnt: count() })
+      .from(usersTable)
+      .where(sql`${usersTable.browser} IS NOT NULL`)
+      .groupBy(usersTable.browser)
+      .orderBy(desc(count()))
+      .limit(8),
   ]);
 
   // Get app names for breakdown
@@ -79,6 +95,14 @@ router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
     })),
     registrationsTrend: trendRows.map((r) => ({
       date: r.date,
+      count: Number(r.cnt),
+    })),
+    geoBreakdown: geoRows.map((r) => ({
+      country: r.country,
+      count: Number(r.cnt),
+    })),
+    browserBreakdown: browserRows.map((r) => ({
+      browser: r.browser,
       count: Number(r.cnt),
     })),
   });

@@ -5,6 +5,8 @@
  * AuthHub API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminStatsBrowserBreakdownItem } from './adminStatsBrowserBreakdownItem';
+import type { AdminStatsGeoBreakdownItem } from './adminStatsGeoBreakdownItem';
 import type { AppStat } from './appStat';
 import type { DayStat } from './dayStat';
 import type { ProviderStat } from './providerStat';
@@ -18,4 +20,6 @@ export interface AdminStats {
   providerBreakdown: ProviderStat[];
   appBreakdown: AppStat[];
   registrationsTrend: DayStat[];
+  geoBreakdown?: AdminStatsGeoBreakdownItem[];
+  browserBreakdown?: AdminStatsBrowserBreakdownItem[];
 }
