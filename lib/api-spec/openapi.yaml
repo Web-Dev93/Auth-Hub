@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AuthHub API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: admin-users
+    description: Admin user management
+  - name: admin-apps
+    description: Admin application management
+  - name: admin-stats
+    description: Admin statistics and analytics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +32,720 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/stats:
+    get:
+      operationId: getStats
+      tags: [admin-stats]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin-users]
+      summary: List all users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: number
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: number
+            default: 20
+        - name: appId
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: role
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users/{id}:
+    get:
+      operationId: getUser
+      tags: [admin-users]
+      summary: Get user details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUser
+      tags: [admin-users]
+      summary: Update user role or status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUser
+      tags: [admin-users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/apps:
+    get:
+      operationId: listApps
+      tags: [admin-apps]
+      summary: List all registered applications
+      responses:
+        "200":
+          description: List of apps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/App"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createApp
+      tags: [admin-apps]
+      summary: Create a new login panel application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppInput"
+      responses:
+        "201":
+          description: Created app with secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppWithSecret"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/apps/{id}:
+    get:
+      operationId: getApp
+      tags: [admin-apps]
+      summary: Get application details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/App"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateApp
+      tags: [admin-apps]
+      summary: Update application settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppUpdate"
+      responses:
+        "200":
+          description: Updated app
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/App"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteApp
+      tags: [admin-apps]
+      summary: Delete an application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/apps/{id}/rotate-key:
+    post:
+      operationId: rotateAppKey
+      tags: [admin-apps]
+      summary: Rotate application client secret
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: New credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppKey"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/activity:
+    get:
+      operationId: listActivity
+      tags: [admin-stats]
+      summary: List recent activity logs
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: appId
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: number
+            default: 50
+      responses:
+        "200":
+          description: Activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    Me:
+      type: object
+      required: [id, email, name, role, verificationLevel, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+        verificationLevel:
+          type: number
+        connectedProviders:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+
+    User:
+      type: object
+      required: [id, email, name, role, status, verificationLevel, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+        status:
+          type: string
+        verificationLevel:
+          type: number
+        connectedProviders:
+          type: array
+          items:
+            type: string
+        primaryAppId:
+          type: ["string", "null"]
+        primaryAppName:
+          type: ["string", "null"]
+        geoCountry:
+          type: ["string", "null"]
+        geoCity:
+          type: ["string", "null"]
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    UserDetail:
+      type: object
+      required: [id, email, name, role, status, verificationLevel, createdAt, accounts, recentActivity]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+        status:
+          type: string
+        verificationLevel:
+          type: number
+        connectedProviders:
+          type: array
+          items:
+            type: string
+        primaryAppId:
+          type: ["string", "null"]
+        primaryAppName:
+          type: ["string", "null"]
+        geoCountry:
+          type: ["string", "null"]
+        geoCity:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        deviceType:
+          type: ["string", "null"]
+        browser:
+          type: ["string", "null"]
+        os:
+          type: ["string", "null"]
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LinkedAccount"
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLog"
+
+    LinkedAccount:
+      type: object
+      required: [id, provider, createdAt]
+      properties:
+        id:
+          type: string
+        provider:
+          type: string
+        providerEmail:
+          type: ["string", "null"]
+        providerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        role:
+          type: string
+        status:
+          type: string
+
+    UserList:
+      type: object
+      required: [users, total, page, limit]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+
+    App:
+      type: object
+      required: [id, name, url, clientId, enabledProviders, requestedScopes, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        clientId:
+          type: string
+        enabledProviders:
+          type: array
+          items:
+            type: string
+        requestedScopes:
+          type: object
+          additionalProperties: true
+        widgetColor:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        userCount:
+          type: number
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AppWithSecret:
+      type: object
+      required: [id, name, url, clientId, clientSecret, enabledProviders, requestedScopes, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        enabledProviders:
+          type: array
+          items:
+            type: string
+        requestedScopes:
+          type: object
+          additionalProperties: true
+        widgetColor:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AppInput:
+      type: object
+      required: [name, url]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        url:
+          type: string
+          minLength: 1
+        enabledProviders:
+          type: array
+          items:
+            type: string
+          default: ["google"]
+        requestedScopes:
+          type: object
+          additionalProperties: true
+        widgetColor:
+          type: string
+        logoUrl:
+          type: string
+
+    AppUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        url:
+          type: string
+          minLength: 1
+        enabledProviders:
+          type: array
+          items:
+            type: string
+        requestedScopes:
+          type: object
+          additionalProperties: true
+        widgetColor:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+
+    AppKey:
+      type: object
+      required: [clientId, clientSecret]
+      properties:
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+
+    AdminStats:
+      type: object
+      required: [totalUsers, newUsersToday, newUsersThisWeek, activeToday, totalApps, providerBreakdown, appBreakdown, registrationsTrend]
+      properties:
+        totalUsers:
+          type: number
+        newUsersToday:
+          type: number
+        newUsersThisWeek:
+          type: number
+        activeToday:
+          type: number
+        totalApps:
+          type: number
+        providerBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderStat"
+        appBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppStat"
+        registrationsTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayStat"
+
+    ProviderStat:
+      type: object
+      required: [provider, count]
+      properties:
+        provider:
+          type: string
+        count:
+          type: number
+
+    AppStat:
+      type: object
+      required: [appId, appName, count]
+      properties:
+        appId:
+          type: string
+        appName:
+          type: string
+        count:
+          type: number
+
+    DayStat:
+      type: object
+      required: [date, count]
+      properties:
+        date:
+          type: string
+        count:
+          type: number
+
+    ActivityLog:
+      type: object
+      required: [id, eventType, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: ["string", "null"]
+        userEmail:
+          type: ["string", "null"]
+        userName:
+          type: ["string", "null"]
+        appId:
+          type: ["string", "null"]
+        appName:
+          type: ["string", "null"]
+        eventType:
+          type: string
+        provider:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        geoCountry:
+          type: ["string", "null"]
+        geoCity:
+          type: ["string", "null"]
+        userAgent:
+          type: ["string", "null"]
+        createdAt:
+          type: string
