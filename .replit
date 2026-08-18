@@ -25,4 +25,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-GOOGLE_CALLBACK_URL = "https://0866eb39-8dc4-46da-bf7a-9565bddfdd56-00-1fbbxiiexzky8.spock.replit.dev/api/auth/google/callback"
+GOOGLE_CALLBACK_URL = "https://auth-manager-hub.replit.app/api/auth/google/callback"
