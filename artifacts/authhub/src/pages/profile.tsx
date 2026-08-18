@@ -1,11 +1,12 @@
 import * as React from "react"
 import { AppLayout } from "@/components/layout"
-import { useGetMe, useGetMeActivity } from "@workspace/api-client-react"
+import { useGetMe, useGetMeActivity, useListProviders } from "@workspace/api-client-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProviderIcon } from "@/components/provider-icon"
-import { Shield, MapPin, Laptop, Globe, Monitor, Clock, LogIn, UserPlus, Wifi } from "lucide-react"
+import { Shield, MapPin, Laptop, Globe, Monitor, Clock, LogIn, UserPlus, Wifi, CheckCircle2, PlusCircle, Lock } from "lucide-react"
+import { FaGoogle, FaFacebook, FaGithub, FaDiscord, FaMicrosoft } from "react-icons/fa6"
 import { formatDistanceToNow, format, differenceInDays, parseISO, startOfDay } from "date-fns"
 import {
   BarChart,
@@ -52,6 +53,7 @@ const PROVIDER_COLORS: Record<string, string> = {
 
 export default function Profile() {
   const { data: me, isLoading: meLoading } = useGetMe()
+  const { data: enabledProviders = [] } = useListProviders()
   const { data: activity = [], isLoading: activityLoading } = useGetMeActivity(
     { limit: 365 },
     { query: { enabled: !!me } }
@@ -221,40 +223,33 @@ export default function Profile() {
           </CardContent>
         </Card>
 
+        {/* ── Provider verification grid ── */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5" />
+              Weryfikacja kont
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ALL_PROVIDERS.map((p) => {
+                const connected = (me.accounts ?? []).find((a) => a.provider === p.id)
+                const enabled = enabledProviders.includes(p.id)
+                return (
+                  <ProviderCard
+                    key={p.id}
+                    provider={p}
+                    connected={connected ? { email: connected.providerEmail ?? undefined, date: connected.createdAt ?? undefined } : undefined}
+                    enabled={enabled}
+                  />
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* ── Connected accounts ── */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Shield className="h-3.5 w-3.5" />
-                Połączone konta
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {(me.accounts ?? (me.connectedProviders ?? []).map((p) => ({ id: p, provider: p, providerEmail: null, providerName: null, createdAt: null }))).map((acc) => (
-                <div
-                  key={acc.id}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${PROVIDER_COLORS[acc.provider] ?? "bg-muted/50"}`}
-                >
-                  <ProviderIcon provider={acc.provider} className="h-5 w-5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold capitalize">{acc.provider}</p>
-                    {acc.providerEmail && (
-                      <p className="text-xs truncate opacity-70">{acc.providerEmail}</p>
-                    )}
-                  </div>
-                  {acc.createdAt && (
-                    <span className="text-[10px] font-mono opacity-60 shrink-0">
-                      {format(parseISO(acc.createdAt), "d MMM yyyy")}
-                    </span>
-                  )}
-                </div>
-              ))}
-              {(me.accounts?.length ?? me.connectedProviders?.length ?? 0) === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">Brak połączonych kont</p>
-              )}
-            </CardContent>
-          </Card>
 
           {/* ── Collected data ── */}
           <Card>
@@ -354,5 +349,66 @@ function DataRow({ icon, label, value, mono = false }: { icon: React.ReactNode; 
       </div>
       <p className={`text-sm font-medium text-right truncate ${mono ? "font-mono text-xs" : ""}`}>{value}</p>
     </div>
+  )
+}
+
+// ─── Provider card ──────────────────────────────────────────────────────────
+
+const ALL_PROVIDERS: { id: string; label: string; icon: React.ReactNode; color: string }[] = [
+  { id: "google",    label: "Google",    icon: <FaGoogle    className="h-5 w-5" />, color: "text-red-500" },
+  { id: "facebook",  label: "Facebook",  icon: <FaFacebook  className="h-5 w-5 text-[#1877F2]" />, color: "text-blue-600" },
+  { id: "github",    label: "GitHub",    icon: <FaGithub    className="h-5 w-5" />, color: "text-gray-700 dark:text-gray-300" },
+  { id: "discord",   label: "Discord",   icon: <FaDiscord   className="h-5 w-5 text-[#5865F2]" />, color: "text-indigo-500" },
+  { id: "microsoft", label: "Microsoft", icon: <FaMicrosoft className="h-5 w-5 text-[#00a4ef]" />, color: "text-cyan-500" },
+]
+
+function ProviderCard({
+  provider,
+  connected,
+  enabled,
+}: {
+  provider: (typeof ALL_PROVIDERS)[number]
+  connected?: { email?: string; date?: string }
+  enabled: boolean
+}) {
+  if (connected) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 dark:border-emerald-900 dark:bg-emerald-950/40">
+        <div className={provider.color}>{provider.icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{provider.label}</p>
+          {connected.email && (
+            <p className="text-[11px] text-muted-foreground truncate">{connected.email}</p>
+          )}
+        </div>
+        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+      </div>
+    )
+  }
+
+  if (!enabled) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-muted px-3 py-3 opacity-50">
+        <div className="text-muted-foreground">{provider.icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">{provider.label}</p>
+          <p className="text-[11px] text-muted-foreground">Niezskonfigurowane</p>
+        </div>
+        <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+      </div>
+    )
+  }
+
+  return (
+    <a href={`/api/auth/${provider.id}/link`} className="block">
+      <div className="flex items-center gap-3 rounded-xl border border-border px-3 py-3 hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer group">
+        <div className={provider.color}>{provider.icon}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{provider.label}</p>
+          <p className="text-[11px] text-muted-foreground">Kliknij aby połączyć</p>
+        </div>
+        <PlusCircle className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+      </div>
+    </a>
   )
 }

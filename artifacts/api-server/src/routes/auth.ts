@@ -12,66 +12,62 @@ router.get("/auth/providers", (_req, res): void => {
   res.json(getEnabledProviders());
 });
 
-// ─── Google ────────────────────────────────────────────────────────────────
-router.get("/auth/google", passport.authenticate("google", { scope: ["openid", "profile", "email"] }));
+// ─── Helper: register login + link routes for a provider ───────────────────
+type ProviderRouteConfig = {
+  loginScope?: string[];
+  authorizeScope?: string[];
+};
 
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login?error=auth_failed" }),
-  (_req, res): void => { res.redirect("/"); },
-);
+function addProviderRoutes(provider: string, cfg: ProviderRouteConfig = {}): void {
+  // Login
+  router.get(`/auth/${provider}`, (req, res, next) => {
+    if (!passport._strategy(provider)) {
+      res.status(503).json({ error: `${provider} OAuth not configured` });
+      return;
+    }
+    passport.authenticate(provider, { scope: cfg.loginScope })(req, res, next);
+  });
+
+  router.get(
+    `/auth/${provider}/callback`,
+    passport.authenticate(provider, { failureRedirect: "/login?error=auth_failed" }),
+    (_req, res): void => { res.redirect("/"); },
+  );
+
+  // Link (requires being logged in)
+  router.get(`/auth/${provider}/link`, requireAuth, (req, res, next) => {
+    if (!passport._strategy(provider)) {
+      res.redirect("/profile?error=provider_not_configured");
+      return;
+    }
+    (req.session as { linkingUserId?: string }).linkingUserId = req.user!.id;
+    passport.authorize(provider, { scope: cfg.authorizeScope ?? cfg.loginScope })(req, res, next);
+  });
+
+  router.get(
+    `/auth/${provider}/link/callback`,
+    requireAuth,
+    (req, res, next) => {
+      passport.authorize(provider, { failureRedirect: "/profile?error=link_failed" })(req, res, next);
+    },
+    (_req, res): void => { res.redirect("/profile?linked=true"); },
+  );
+}
+
+// ─── Google ────────────────────────────────────────────────────────────────
+addProviderRoutes("google", { loginScope: ["openid", "profile", "email"] });
 
 // ─── Facebook ─────────────────────────────────────────────────────────────
-router.get("/auth/facebook", (req, res, next) => {
-  const strategy = passport._strategy("facebook");
-  if (!strategy) { res.status(503).json({ error: "Facebook OAuth not configured" }); return; }
-  passport.authenticate("facebook", { scope: ["email"] })(req, res, next);
-});
-
-router.get(
-  "/auth/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login?error=auth_failed" }),
-  (_req, res): void => { res.redirect("/"); },
-);
+addProviderRoutes("facebook", { loginScope: ["email"] });
 
 // ─── GitHub ───────────────────────────────────────────────────────────────
-router.get("/auth/github", (req, res, next) => {
-  const strategy = passport._strategy("github");
-  if (!strategy) { res.status(503).json({ error: "GitHub OAuth not configured" }); return; }
-  passport.authenticate("github", { scope: ["user:email"] })(req, res, next);
-});
-
-router.get(
-  "/auth/github/callback",
-  passport.authenticate("github", { failureRedirect: "/login?error=auth_failed" }),
-  (_req, res): void => { res.redirect("/"); },
-);
+addProviderRoutes("github", { loginScope: ["user:email"] });
 
 // ─── Discord ──────────────────────────────────────────────────────────────
-router.get("/auth/discord", (req, res, next) => {
-  const strategy = passport._strategy("discord");
-  if (!strategy) { res.status(503).json({ error: "Discord OAuth not configured" }); return; }
-  passport.authenticate("discord")(req, res, next);
-});
-
-router.get(
-  "/auth/discord/callback",
-  passport.authenticate("discord", { failureRedirect: "/login?error=auth_failed" }),
-  (_req, res): void => { res.redirect("/"); },
-);
+addProviderRoutes("discord");
 
 // ─── Microsoft ────────────────────────────────────────────────────────────
-router.get("/auth/microsoft", (req, res, next) => {
-  const strategy = passport._strategy("microsoft");
-  if (!strategy) { res.status(503).json({ error: "Microsoft OAuth not configured" }); return; }
-  passport.authenticate("microsoft")(req, res, next);
-});
-
-router.get(
-  "/auth/microsoft/callback",
-  passport.authenticate("microsoft", { failureRedirect: "/login?error=auth_failed" }),
-  (_req, res): void => { res.redirect("/"); },
-);
+addProviderRoutes("microsoft");
 
 // ─── Current user (full profile) ───────────────────────────────────────────
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {

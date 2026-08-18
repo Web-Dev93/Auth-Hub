@@ -48,10 +48,56 @@ interface UpsertOptions {
   avatarUrl: string | null;
   providerEmail?: string;
   profileData?: Record<string, unknown>;
+  /** When set, skip user lookup — just link the account to this existing user ID */
+  forceUserId?: string;
 }
 
 async function upsertOAuthUser(opts: UpsertOptions): Promise<{ id: string }> {
-  const { req, provider, providerAccountId, email, name, avatarUrl, providerEmail, profileData } = opts;
+  const { req, provider, providerAccountId, email, name, avatarUrl, providerEmail, profileData, forceUserId } = opts;
+
+  // ── Link mode: add account to an already-logged-in user ──────────────────
+  if (forceUserId) {
+    const ip = (req.ip || (req.socket as { remoteAddress?: string })?.remoteAddress || "").replace("::ffff:", "");
+    const geo = await getGeoInfo(ip);
+
+    // Upsert the provider account
+    const [existing] = await db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.providerAccountId, providerAccountId))
+      .limit(1);
+
+    if (!existing) {
+      await db.insert(accountsTable).values({
+        userId: forceUserId,
+        provider,
+        providerAccountId,
+        providerEmail: providerEmail ?? email,
+        providerName: name,
+        profileData: profileData ?? {},
+      });
+    }
+
+    // Refresh avatar if we don't have one yet
+    if (avatarUrl) {
+      const [u] = await db.select({ avatarUrl: usersTable.avatarUrl }).from(usersTable).where(eq(usersTable.id, forceUserId)).limit(1);
+      if (u && !u.avatarUrl) {
+        await db.update(usersTable).set({ avatarUrl }).where(eq(usersTable.id, forceUserId));
+      }
+    }
+
+    await db.insert(activityLogsTable).values({
+      userId: forceUserId,
+      eventType: "link",
+      provider,
+      ipAddress: ip || null,
+      geoCountry: geo.country ?? null,
+      geoCity: geo.city ?? null,
+      userAgent: req.headers["user-agent"] ?? null,
+    });
+
+    return { id: forceUserId };
+  }
 
   const ip = (req.ip || (req.socket as { remoteAddress?: string })?.remoteAddress || "").replace("::ffff:", "");
   const geo = await getGeoInfo(ip);
@@ -163,8 +209,11 @@ if (!googleClientId || !googleClientSecret) {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error("No email from Google profile"), undefined);
+          const sess = req.session as { linkingUserId?: string };
+          const forceUserId = sess.linkingUserId;
+          if (forceUserId) delete sess.linkingUserId;
           const result = await upsertOAuthUser({
-            req,
+            req, forceUserId,
             provider: "google",
             providerAccountId: profile.id,
             email,
@@ -207,8 +256,11 @@ if (!fbAppId || !fbAppSecret) {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error("No email from Facebook profile"), undefined);
+          const sess = req.session as { linkingUserId?: string };
+          const forceUserId = sess.linkingUserId;
+          if (forceUserId) delete sess.linkingUserId;
           const result = await upsertOAuthUser({
-            req,
+            req, forceUserId,
             provider: "facebook",
             providerAccountId: profile.id,
             email,
@@ -245,8 +297,11 @@ if (!githubClientId || !githubClientSecret) {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error("No email from GitHub profile — ensure email is public or grant email scope"), undefined);
+          const sess = req.session as { linkingUserId?: string };
+          const forceUserId = sess.linkingUserId;
+          if (forceUserId) delete sess.linkingUserId;
           const result = await upsertOAuthUser({
-            req,
+            req, forceUserId,
             provider: "github",
             providerAccountId: profile.id,
             email,
@@ -292,8 +347,11 @@ if (!discordClientId || !discordClientSecret) {
           const avatarUrl = profile.avatar
             ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
             : null;
+          const sess = req.session as { linkingUserId?: string };
+          const forceUserId = sess.linkingUserId;
+          if (forceUserId) delete sess.linkingUserId;
           const result = await upsertOAuthUser({
-            req,
+            req, forceUserId,
             provider: "discord",
             providerAccountId: profile.id,
             email,
@@ -338,8 +396,11 @@ if (!msClientId || !msClientSecret) {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) return done(new Error("No email from Microsoft profile"), undefined);
+          const sess = req.session as { linkingUserId?: string };
+          const forceUserId = sess.linkingUserId;
+          if (forceUserId) delete sess.linkingUserId;
           const result = await upsertOAuthUser({
-            req,
+            req, forceUserId,
             provider: "microsoft",
             providerAccountId: profile.id,
             email,
