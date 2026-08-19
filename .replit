@@ -26,3 +26,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 GOOGLE_CALLBACK_URL = "https://auth-manager-hub.replit.app/api/auth/google/callback"
+FACEBOOK_CALLBACK_URL = "https://auth-manager-hub.replit.app/api/auth/facebook/callback"
