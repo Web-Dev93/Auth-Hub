@@ -200,7 +200,7 @@ if (!googleClientId || !googleClientSecret) {
 } else {
   const callbackURL =
     process.env.GOOGLE_CALLBACK_URL ||
-    `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`;
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`;
 
   passport.use(
     new GoogleStrategy(
@@ -241,7 +241,7 @@ if (!fbAppId || !fbAppSecret) {
 } else {
   const callbackURL =
     process.env.FACEBOOK_CALLBACK_URL ||
-    `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/facebook/callback`;
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || process.env.REPLIT_DEV_DOMAIN}/api/auth/facebook/callback`;
 
   passport.use(
     new FacebookStrategy(
@@ -288,7 +288,7 @@ if (!githubClientId || !githubClientSecret) {
 } else {
   const callbackURL =
     process.env.GITHUB_CALLBACK_URL ||
-    `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/github/callback`;
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || process.env.REPLIT_DEV_DOMAIN}/api/auth/github/callback`;
 
   passport.use(
     new GitHubStrategy(
@@ -329,7 +329,7 @@ if (!discordClientId || !discordClientSecret) {
 } else {
   const callbackURL =
     process.env.DISCORD_CALLBACK_URL ||
-    `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/discord/callback`;
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || process.env.REPLIT_DEV_DOMAIN}/api/auth/discord/callback`;
 
   passport.use(
     new DiscordStrategy(
@@ -379,7 +379,7 @@ if (!msClientId || !msClientSecret) {
 } else {
   const callbackURL =
     process.env.MICROSOFT_CALLBACK_URL ||
-    `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/microsoft/callback`;
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || process.env.REPLIT_DEV_DOMAIN}/api/auth/microsoft/callback`;
 
   passport.use(
     // @ts-expect-error passport-microsoft has loose typings

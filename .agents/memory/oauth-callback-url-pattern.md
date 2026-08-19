@@ -10,4 +10,4 @@ When adding a new OAuth provider, **immediately** set a `<PROVIDER>_CALLBACK_URL
 
 **Why:** This mistake was made twice — once with Google, once with Facebook. Both times the fix was the same: set the explicit production callback URL in Replit Secrets/env vars. The dynamic `REPLIT_DEV_DOMAIN` approach only works in dev and breaks in production OAuth flows.
 
-**How to apply:** For every new OAuth provider added to `artifacts/api-server/src/lib/passport.ts`, immediately set `<PROVIDER>_CALLBACK_URL` via `setEnvVars` to `https://auth-manager-hub.replit.app/api/auth/<provider>/callback` before testing or asking the user to configure the provider's developer console.
+**How to apply:** For every new OAuth provider added to `artifacts/api-server/src/lib/passport.ts`, build the fallback callback URL using `REPLIT_DOMAINS?.split(",")[0] || REPLIT_DEV_DOMAIN` — never `REPLIT_DEV_DOMAIN` alone. `REPLIT_DOMAINS` resolves to the production domain in deployed environments; `REPLIT_DEV_DOMAIN` resolves to the dev tunnel domain and breaks production OAuth flows.
