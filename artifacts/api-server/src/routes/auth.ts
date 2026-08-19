@@ -19,7 +19,7 @@ type ProviderRouteConfig = {
 };
 
 function addProviderRoutes(provider: string, cfg: ProviderRouteConfig = {}): void {
-  // Login
+  // Login initiation
   router.get(`/auth/${provider}`, (req, res, next) => {
     if (!passport._strategy(provider)) {
       res.status(503).json({ error: `${provider} OAuth not configured` });
@@ -28,30 +28,33 @@ function addProviderRoutes(provider: string, cfg: ProviderRouteConfig = {}): voi
     passport.authenticate(provider, { scope: cfg.loginScope })(req, res, next);
   });
 
+  // Shared callback — handles both login and account-link flows.
+  // When linking, session.linkingUserId is set before OAuth so the strategy
+  // attaches the account to the existing user, and session.linkingRedirect
+  // tells this handler where to redirect afterwards.
   router.get(
     `/auth/${provider}/callback`,
     passport.authenticate(provider, { failureRedirect: "/login?error=auth_failed" }),
-    (_req, res): void => { res.redirect("/"); },
+    (req, res): void => {
+      const sess = req.session as { linkingRedirect?: string };
+      const target = sess.linkingRedirect ?? "/";
+      delete sess.linkingRedirect;
+      res.redirect(target);
+    },
   );
 
-  // Link (requires being logged in)
+  // Link initiation — stores user ID + post-link redirect in session,
+  // then goes through the same OAuth flow as login (same registered callbackURL).
   router.get(`/auth/${provider}/link`, requireAuth, (req, res, next) => {
     if (!passport._strategy(provider)) {
       res.redirect("/profile?error=provider_not_configured");
       return;
     }
-    (req.session as { linkingUserId?: string }).linkingUserId = req.user!.id;
-    passport.authorize(provider, { scope: cfg.authorizeScope ?? cfg.loginScope })(req, res, next);
+    const sess = req.session as { linkingUserId?: string; linkingRedirect?: string };
+    sess.linkingUserId = req.user!.id;
+    sess.linkingRedirect = "/profile?linked=true";
+    passport.authenticate(provider, { scope: cfg.loginScope })(req, res, next);
   });
-
-  router.get(
-    `/auth/${provider}/link/callback`,
-    requireAuth,
-    (req, res, next) => {
-      passport.authorize(provider, { failureRedirect: "/profile?error=link_failed" })(req, res, next);
-    },
-    (_req, res): void => { res.redirect("/profile?linked=true"); },
-  );
 }
 
 // ─── Google ────────────────────────────────────────────────────────────────
